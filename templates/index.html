@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Assessment System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"], select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .skills-input {
+            display: none;
+        }
+        .skill-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e9f7ef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Skill Assessment System</h1>
+        
+        <!-- Resume Upload Section -->
+        <div class="section">
+            <h2>📄 Upload Resume</h2>
+            <form id="resumeForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" name="userId" required>
+                </div>
+                <div class="form-group">
+                    <label for="resume">Resume File:</label>
+                    <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx">
+                </div>
+                <button type="submit">Upload Resume</button>
+            </form>
+        </div>
+
+        <!-- Manual Skills Entry -->
+        <div class="section">
+            <h2>✍️ Add Skills Manually</h2>
+            <button onclick="toggleSkillsInput()">Add Manual Skills</button>
+            <div id="skillsInput" class="skills-input">
+                <div class="form-group">
+                    <label for="skillName">Skill Name:</label>
+                    <input type="text" id="skillName">
+                </div>
+                <div class="form-group">
+                    <label for="skillLevel">Level (1-5):</label>
+                    <select id="skillLevel">
+                        <option value="1">1 - Beginner</option>
+                        <option value="2">2 - Novice</option>
+                        <option value="3">3 - Intermediate</option>
+                        <option value="4">4 - Advanced</option>
+                        <option value="5">5 - Expert</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="skillCategory">Category:</label>
+                    <select id="skillCategory">
+                        <option value="technical">Technical</option>
+                        <option value="soft">Soft Skills</option>
+                        <option value="language">Language</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <button onclick="addSkill()">Add Skill</button>
+            </div>
+            <div id="skillsList"></div>
+        </div>
+
+        <!-- Assessment Section -->
+        <div class="section">
+            <h2>🧠 Conduct Assessment</h2>
+            <div class="form-group">
+                <label for="assessmentUserId">User ID:</label>
+                <input type="text" id="assessmentUserId">
+            </div>
+            <div class="form-group">
+                <label for="targetSkills">Target Skills (comma-separated):</label>
+                <input type="text" id="targetSkills" placeholder="Python, JavaScript, Communication">
+            </div>
+            <button onclick="conductAssessment()">Start Assessment</button>
+        </div>
+
+        <!-- Visualization Section -->
+        <div class="section">
+            <h2>📊 Generate Visualization</h2>
+            <div class="form-group">
+                <label for="vizUserId">User ID:</label>
+                <input type="text" id="vizUserId">
+            </div>
+            <div class="form-group">
+                <label for="vizType">Visualization Type:</label>
+                <select id="vizType">
+                    <option value="radar">Radar Chart</option>
+                    <option value="bar">Bar Chart</option>
+                    <option value="skill_gap">Skill Gap Analysis</option>
+                </select>
+            </div>
+            <button onclick="generateVisualization()">Generate Visualization</button>
+        </div>
+
+        <!-- Results Display -->
+        <div id="results" class="results" style="display: none;">
+            <h3>Results:</h3>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let manualSkills = [];
+
+        function toggleSkillsInput() {
+            const skillsInput = document.getElementById('skillsInput');
+            skillsInput.style.display = skillsInput.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function addSkill() {
+            const name = document.getElementById('skillName').value;
+            const level = document.getElementById('skillLevel').value;
+            const category = document.getElementById('skillCategory').value;
+
+            if (!name) {
+                alert('Please enter a skill name');
+                return;
+            }
+
+            const skill = {
+                name: name,
+                level: parseInt(level),
+                category: category,
+                confidence: 0.8,
+                source: 'manual'
+            };
+
+            manualSkills.push(skill);
+            displaySkills();
+
+            // Clear inputs
+            document.getElementById('skillName').value = '';
+        }
+
+        function displaySkills() {
+            const skillsList = document.getElementById('skillsList');
+            skillsList.innerHTML = '';
+            
+            manualSkills.forEach((skill, index) => {
+                const skillDiv = document.createElement('div');
+                skillDiv.className = 'skill-item';
+                skillDiv.innerHTML = `
+                    <strong>${skill.name}</strong> - Level: ${skill.level}, Category: ${skill.category}
+                    <button onclick="removeSkill(${index})" style="float: right; background: red;">Remove</button>
+                `;
+                skillsList.appendChild(skillDiv);
+            });
+        }
+
+        function removeSkill(index) {
+            manualSkills.splice(index, 1);
+            displaySkills();
+        }
+
+        function showResults(data) {
+            const results = document.getElementById('results');
+            const content = document.getElementById('resultsContent');
+            content.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            results.style.display = 'block';
+        }
+
+        // Resume upload
+        document.getElementById('resumeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            if (manualSkills.length > 0) {
+                formData.append('manual_skills', JSON.stringify(manualSkills));
+            }
+
+            try {
+                const response = await fetch('/upload_resume', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                showResults(data);
+            } catch (error) {
+                alert('Error uploading resume: ' + error.message);
+            }
+        });
+
+        async function conductAssessment() {
+            const userId = document.getElementById('assessmentUserId').value;
+            const targetSkills = document.getElementById('targetSkills').value.split(',').map(s => s.trim());
+
+            if (!userId) {
+                alert('Please enter a User ID');
+                return;
+            }
+
+            try {
+                const response = await fetch('/conduct_assessment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        target_skills: targetSkills
+                    })
+                });
+                const data = await response.json();
+                showResults(data);
+            } catch (error) {
+                alert('Error conducting assessment: ' + error.message);
+            }
+        }
+
+        async function generateVisualization() {
+            const userId = document.getElementById('vizUserId').value;
+            const vizType = document.getElementById('vizType').value;
+
+            if (!userId) {
+                alert('Please enter a User ID');
+                return;
+            }
+
+            try {
+                const response = await fetch('/generate_visualization', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        viz_type: vizType
+                    })
+                });
+                const data = await response.json();
+                showResults(data);
+            } catch (error) {
+                alert('Error generating visualization: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
